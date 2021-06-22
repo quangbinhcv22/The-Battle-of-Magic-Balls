@@ -3,7 +3,101 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 
-#region Strength structure
+[RequireComponent(typeof(Rigidbody))]
+public class Ball : MonoBehaviour
+{
+    protected Rigidbody rb;
+
+    [Space]
+    public MoveSpeed moveSpeed;
+    public ThrustForce thrustForce;
+    public Resistance resistance;
+
+    protected string tagTarget = "Untagged";
+
+    protected void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    protected void FixedUpdate()
+    {
+        UpdateStrengthStat();
+        DetectOutBound();
+    }
+
+    protected void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.GetComponent<Ball>() != null)
+        {
+            CreateThrust(collision.gameObject.GetComponent<Ball>());
+        }
+    }
+
+    public void CreateThrust(Ball targetBall)
+    {
+        GameObject target = targetBall.gameObject;
+
+        if (target.tag == this.tagTarget)
+        {
+            Rigidbody targetRigibody = target.GetComponent<Rigidbody>();
+
+            float ThrustForce = this.thrustForce.Current * (1 - targetBall.resistance.Current);
+
+            targetRigibody.AddForce(ThrustForce * GetDirectionToTarget(target.gameObject));
+        }
+
+    }
+
+    protected Vector3 GetDirectionToTarget(GameObject target, bool isNormalized = false)
+    {
+        Vector3 positionTarget = target.transform.position;
+        Vector3 positionMyself = this.transform.position;
+
+        // Direction vector to target is difference between position coordinates of target and self
+        Vector3 directionToTarget = positionTarget - positionMyself;
+
+        if (isNormalized)
+        {
+            return directionToTarget.normalized;
+        }
+        else
+        {
+            return directionToTarget;
+        }
+    }
+
+    protected void UpdateStrengthStat()
+    {
+        this.moveSpeed.Current = this.moveSpeed.Start;
+        this.thrustForce.Current = this.thrustForce.Start;
+        this.resistance.Current = this.resistance.Start;
+    }
+
+
+    protected virtual void DetectOutBound()
+    {
+        if (IsOutBond())
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    protected bool IsOutBond()
+    {
+        float positionBound = 15;
+        bool isOutBound = Mathf.Abs(this.transform.position.x) > positionBound || Mathf.Abs(this.transform.position.y) > positionBound || Mathf.Abs(this.transform.position.z) > positionBound;
+
+        return isOutBound;
+    }
+
+    protected void MoveTo(GameObject target, bool isNormalizedVelocity)
+    {
+        rb.AddForce(GetDirectionToTarget(target, isNormalizedVelocity) * this.moveSpeed.Current);
+    }
+
+}
+
 
 [Serializable]
 public struct MoveSpeed
@@ -224,102 +318,4 @@ public struct Mana
         this.max = max;
         this.current = 0;
     }
-}
-
-#endregion
-
-
-[RequireComponent(typeof(Rigidbody))]
-public class Ball : MonoBehaviour
-{
-    protected Rigidbody rb;
-
-    [Space]
-    public MoveSpeed moveSpeed;
-    public ThrustForce thrustForce;
-    public Resistance resistance;
-
-    protected string tagTarget = "Untagged";
-
-    protected void Start()
-    {
-        rb = GetComponent<Rigidbody>();
-    }
-
-    protected void FixedUpdate()
-    {
-        UpdateStrengthStat();
-        DetectOutBound();
-    }
-
-    protected void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.GetComponent<Ball>() != null)
-        {
-            CreateThrust(collision.gameObject.GetComponent<Ball>());
-        }
-    }
-
-    public void CreateThrust(Ball targetBall)
-    {
-        GameObject target = targetBall.gameObject;
-
-        if (target.tag == this.tagTarget)
-        {
-            Rigidbody targetRigibody = target.GetComponent<Rigidbody>();
-
-            float ThrustForce = this.thrustForce.Current * (1 - targetBall.resistance.Current);
-
-            targetRigibody.AddForce(ThrustForce * GetDirectionToTarget(target.gameObject));
-        }
-
-    }
-
-    protected Vector3 GetDirectionToTarget(GameObject target, bool isNormalized = false)
-    {
-        Vector3 positionTarget = target.transform.position;
-        Vector3 positionMyself = this.transform.position;
-
-        // Direction vector to target is difference between position coordinates of target and self
-        Vector3 directionToTarget = positionTarget - positionMyself;
-
-        if (isNormalized)
-        {
-            return directionToTarget.normalized;
-        }
-        else
-        {
-            return directionToTarget;
-        }
-    }
-
-    protected void UpdateStrengthStat()
-    {
-        this.moveSpeed.Current = this.moveSpeed.Start;
-        this.thrustForce.Current = this.thrustForce.Start;
-        this.resistance.Current = this.resistance.Start;
-    }
-
-
-    protected virtual void DetectOutBound()
-    {
-        if (IsOutBond())
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    protected bool IsOutBond()
-    {
-        float positionBound = 15;
-        bool isOutBound = Mathf.Abs(this.transform.position.x) > positionBound || Mathf.Abs(this.transform.position.y) > positionBound || Mathf.Abs(this.transform.position.z) > positionBound;
-
-        return isOutBound;
-    }
-
-    protected void MoveTo(GameObject target, bool isNormalizedVelocity)
-    {
-        rb.AddForce(GetDirectionToTarget(target, isNormalizedVelocity) * this.moveSpeed.Current);
-    }
-
 }
